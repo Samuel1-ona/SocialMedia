@@ -1,126 +1,67 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
-import "./CovalNftFactory.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./CovalNftFactory.sol"; 
 
-
-
-
-contract CovalSocialMedia is AccessControl{
-
-    // let define the role of the RBAC
-
-    bytes32 public constant AMIN_ROLE = keccak256("AMIN_ROLE");
-
+contract CovalSocialMedia is AccessControl {
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant USER_ROLE = keccak256("USER_ROLE");
 
+    CovalFactory public covalNftFactory;
 
-    CovalFactory public covalnftFactory;
+    uint256 private postIdCounter = 0;
+    uint256 private commentIdCounter = 0;
 
-    // Let create a state variable that keep tract of posts
-
-    uint256 private postidcounter = 0;
-
-    // let create a state variable that keep track of comment
-
-    uint256 private commentidcounter = 0;
-
-
-// struct representing the post
-    struct post {
-        uint8 nftid;
+    struct Post {
+        uint256 nftId;
         string content;
-        string author;
+        address author;
         uint256 timestamp;
     }
 
     struct Comment {
-        uint8 id;
+        uint256 id;
         string content;
         address commenter;
-        uint8 timestamp;
-        uint8 postId;
+        uint256 timestamp;
+        uint256 postId;
     }
 
-// mapping that tract the post Id
+    mapping(uint256 => Post) private posts;
+    mapping(uint256 => Comment[]) private comments;
 
-mapping(uint256 => post)private posts;
+    event PostCreated(uint256 indexed nftId, uint256 indexed postId, address indexed author);
+    event CommentAdded(uint256 indexed commentId, uint256 indexed postId, address indexed commenter, string content);
 
-// mapping that tract the comment Id
+    constructor(address _covalNftAddress) {
+        covalNftFactory = CovalFactory(_covalNftAddress);
+        _setupRole(ADMIN_ROLE, msg.sender);
+        
+        _setRoleAdmin(USER_ROLE, ADMIN_ROLE);
+    }
 
-mapping (uint256 => Comment[])private comments;
+    // Updated function to create a post
+    function createPost(string memory metadataURL, string memory content) external onlyRole(USER_ROLE) {
+        // Assuming the factory has a method to directly mint an NFT and return its ID
+        uint256 nftId = covalNftFactory.mintNFT(msg.sender, metadataURL); // This needs to match actual implementation
 
+        postIdCounter++;
+        posts[postIdCounter] = Post(nftId, content, msg.sender, block.timestamp);
+        emit PostCreated(nftId, postIdCounter, msg.sender);
+    }
 
-event PostCreated(uint8 indexed nftid, uint8 indexed postid, address indexed author);
+    function createComment(string memory content, uint256 postId) external {
+        commentIdCounter++;
+        comments[postId].push(Comment(commentIdCounter, content, msg.sender, block.timestamp, postId));
+        emit CommentAdded(commentIdCounter, postId, msg.sender, content);
+    }
 
+    function addNewUser(address newUser) external onlyRole(ADMIN_ROLE) {
+        grantRole(USER_ROLE, newUser);
+    }
 
-event CommemtAdded(uint8 indexed CommentId ,  uint8 indexed postId , address indexed commenter , string content );
-
-// setting the roles and calling the nft
-
-constructor (address _covalNftaddress){
-    covalnftFactory = CovalFactory(_covalNftaddress);
-
-
- // Assign the deployer the ADMIN_ROLE
-
-    _setupRole(AMIN_ROLE,msg.sender);  
-
-    // Set ADMIN_ROLE as the admin for USER_ROLE
-    _setRoleAdmin(USER_ROLE, AMIN_ROLE);
-}
-
-// creating a function to create a post from the factory contract
-// because every post is a nft
-function createPost(string memory matadataURL ,  string memory content) external onlyRole(USER_ROLE) {
-
-    uint8 nftid = covalnftFactory.mintNFTs(msg.sender, matadataURL);
-
-    // incrementing the post when the post is created 
-    postidcounter++;
-
-    post[postidcounter] = post(nftid, content, msg.sender, block.timestamp);
-
-    emit PostCreated(nftid, postidcounter, msg.sender);
-}
-
-// function to create comment.
-
-function createComment(string memory _content , uint256 _postId) external {
-
-
-    comments[_postId].push(Comment({
-        id: commentidcounter,
-        content: _content,
-        commenter: msg.sender,
-        timestamp: block.timestamp,
-        postId: _postId
-
-    }));
-
-    commentidcounter++;
-
-    emit CommemtAdded(commentidcounter, _postId, msg.sender, _content);
-
-}
-
-
-
-// function to assign user role to new users
-
-function addNewuser(address _newUser) external onlyRole(AMIN_ROLE) {
-
-    grantRole(USER_ROLE, _newUser);
-}
-
-
-function removeUser(address user ) external onlyRole(AMIN_ROLE) {
-
-    revokeRole(USER_ROLE, user);
-    
-}
-
-
-    
+    function removeUser(address user) external onlyRole(ADMIN_ROLE) {
+        revokeRole(USER_ROLE, user);
+    }
 }
