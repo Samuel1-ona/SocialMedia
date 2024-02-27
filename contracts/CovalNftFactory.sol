@@ -1,23 +1,24 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity 0.8.20;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
 
-import "./CovalNft.sol";
+import "./CovalNft.sol"; // Import the path to your Coval contract
 
-contract NFTFactory {
-    // Keep track of all created NFT collections
-    CovalNft[] public nftCollections;
+contract CovalFactory {
+    // Event to emit when a new Coval contract is created
+    event CovalCreated(address indexed newCovalAddress, address indexed owner);
 
-    // Event to be emitted when a new NFT collection is created
-    event CovalNftCreated(address collectionAddress);
+    // Array to keep track of all created Coval contracts
+    Coval[] public covalContracts;
 
-    function createNFTCollection(string memory name, string memory symbol) public {
-        CovalNft newCollection = new CovalNft(name, symbol);
-        nftCollections.push(newCollection);
-        emit CovalNftCreated(address(newCollection));
+    // Function to create a new Coval contract
+    function createCoval(address initialOwner) public {
+        Coval newCoval = new Coval(initialOwner);
+        covalContracts.push(newCoval);
+        emit CovalCreated(address(newCoval), initialOwner);
     }
 
-    // Function to get the total number of created NFT collections
-    function getNFTCollectionsCount() public view returns (uint256) {
-        return nftCollections.length;
+    // Function to get the total number of created Coval contracts
+    function getCovalContractsCount() public view returns (uint) {
+        return covalContracts.length;
     }
 }

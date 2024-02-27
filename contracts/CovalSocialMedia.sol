@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./CovalNftFactory.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-import "./GaslessTransaction.sol";
+
 
 
 contract CovalSocialMedia is AccessControl{
@@ -12,9 +12,11 @@ contract CovalSocialMedia is AccessControl{
     // let define the role of the RBAC
 
     bytes32 public constant AMIN_ROLE = keccak256("AMIN_ROLE");
-    bytes32 PUBLIC constant USER_ROLE = keccak256("USER_ROLE");
 
-    CovalNftFactory public covalnftFactory;
+    bytes32 public constant USER_ROLE = keccak256("USER_ROLE");
+
+
+    CovalFactory public covalnftFactory;
 
     // Let create a state variable that keep tract of posts
 
@@ -50,16 +52,19 @@ mapping(uint256 => post)private posts;
 mapping (uint256 => Comment[])private comments;
 
 
-event postCreated(uint8 indexed nftid, uint8 indexed postid, address indexed author);
+event PostCreated(uint8 indexed nftid, uint8 indexed postid, address indexed author);
 
 
-event commemtAdded(uint8 indexed CommentId ,  uint8 indexed postId , address indexed commenter , string content )
+event CommemtAdded(uint8 indexed CommentId ,  uint8 indexed postId , address indexed commenter , string content );
 
 // setting the roles and calling the nft
+
 constructor (address _covalNftaddress){
-    covalnftFactory = CovalNftFactory(_covalNftaddress);
+    covalnftFactory = CovalFactory(_covalNftaddress);
+
 
  // Assign the deployer the ADMIN_ROLE
+
     _setupRole(AMIN_ROLE,msg.sender);  
 
     // Set ADMIN_ROLE as the admin for USER_ROLE
@@ -77,12 +82,13 @@ function createPost(string memory matadataURL ,  string memory content) external
 
     post[postidcounter] = post(nftid, content, msg.sender, block.timestamp);
 
-    emit postCreated(nftid, postidcounter, msg.sender);
+    emit PostCreated(nftid, postidcounter, msg.sender);
 }
 
 // function to create comment.
 
 function createComment(string memory _content , uint256 _postId) external {
+    
 
     comments[postId].push(Comment({
         id: commentidcounter,
@@ -95,7 +101,7 @@ function createComment(string memory _content , uint256 _postId) external {
 
     commentidcounter++;
 
-    emit commentAdded(commentidcounter, _postId, msg.sender, _content);
+    emit CommemtAdded(commentidcounter, _postId, msg.sender, _content);
 
 }
 
@@ -107,7 +113,8 @@ function addNewuser(address _newUser) external onlyRole(AMIN_ROLE) {
 
     grantRole(USER_ROLE, _newUser);
 }
-s
+
+
 function removeUser(address user ) external onlyRole(AMIN_ROLE) {
 
     revokeRole(USER_ROLE, user);
