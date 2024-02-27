@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import "./CovalNftFactory.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
+import "./GaslessTransaction.sol";
+
 
 contract CovalSocialMedia is AccessControl{
 
