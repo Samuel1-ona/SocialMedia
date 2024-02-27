@@ -88,9 +88,9 @@ function createPost(string memory matadataURL ,  string memory content) external
 // function to create comment.
 
 function createComment(string memory _content , uint256 _postId) external {
-    
 
-    comments[postId].push(Comment({
+
+    comments[_postId].push(Comment({
         id: commentidcounter,
         content: _content,
         commenter: msg.sender,
