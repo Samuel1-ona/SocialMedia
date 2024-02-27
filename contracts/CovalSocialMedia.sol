@@ -36,7 +36,11 @@ event postCreated(uint8 nftid, string postid, string author);
 // setting the roles and calling the nft
 constructor (address _covalNftaddress){
     covalnftFactory = CovalNftFactory(_covalNftaddress);
-    _setupRole(AMIN_ROLE,msg.sender);
+
+ // Assign the deployer the ADMIN_ROLE
+    _setupRole(AMIN_ROLE,msg.sender);  
+    
+    // Set ADMIN_ROLE as the admin for USER_ROLE
     _setAdminRole(USER_ROLE, AMIN_ROLE);
 }
 
