@@ -1,13 +1,12 @@
-# Sample Hardhat Project
+# Implementing Gasless Transactions
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+There are several methods to implement gasless transactions, but one of the most popular is using a Gas Station Network (GSN) or similar relay service. Another approach is leveraging EIP-2771, which standardizes a way for contracts to handle meta-transactions.
+Using EIP-2771 for Gasless Transactions
 
-Try running some of the following tasks:
+EIP-2771 introduces a standard for forwarding meta-transactions through a trusted forwarder, allowing contract calls to be made on behalf of users, with the gas fee being paid by the forwarder.
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.ts
-```
+# Key Components
+
+```Trusted Forwarder:``` A contract that forwards transactions to other contracts. It pays the gas fee and gets reimbursed or rewarded by the dApp or another mechanism.
+
+ ``` Meta-Transaction Support in Contract:``` Your contract needs to be aware of the forwarder and able to handle calls from it.
