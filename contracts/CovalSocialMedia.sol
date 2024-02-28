@@ -1,67 +1,108 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity 0.8.20;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./CovalNftFactory.sol"; 
+import "./CovalNft.sol";
 
-contract CovalSocialMedia is AccessControl {
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant USER_ROLE = keccak256("USER_ROLE");
+contract CovalSocialMedia {
+    uint256 private postCounter = 0;
+    uint256 private commentCounter = 0;
+    uint256 private groupCounter = 0;
 
-    CovalFactory public covalNftFactory;
-
-    uint256 private postIdCounter = 0;
-    uint256 private commentIdCounter = 0;
+    address public owner;
 
     struct Post {
-        uint256 nftId;
+        uint256 postId;
         string content;
         address author;
-        uint256 timestamp;
+        uint256 nftId;
     }
 
     struct Comment {
-        uint256 id;
-        string content;
-        address commenter;
-        uint256 timestamp;
+        uint256 commentId;
         uint256 postId;
+        address commenter;
+        string comment;
+        uint256 nftId;
     }
 
-    mapping(uint256 => Post) private posts;
-    mapping(uint256 => Comment[]) private comments;
-
-    event PostCreated(uint256 indexed nftId, uint256 indexed postId, address indexed author);
-    event CommentAdded(uint256 indexed commentId, uint256 indexed postId, address indexed commenter, string content);
-
-    constructor(address _covalNftAddress) {
-        covalNftFactory = CovalFactory(_covalNftAddress);
-        _setupRole(ADMIN_ROLE, msg.sender);
-        
-        _setRoleAdmin(USER_ROLE, ADMIN_ROLE);
+    struct Group {
+        string groupName;
+        uint256 groupId;
+        address groupOwner;
+        address[] groupMembers; // Changed to an array to support multiple members
     }
 
-    // Updated function to create a post
-    function createPost(string memory metadataURL, string memory content) external onlyRole(USER_ROLE) {
-        // Assuming the factory has a method to directly mint an NFT and return its ID
-        uint256 nftId = covalNftFactory.mintNFT(msg.sender, metadataURL); // This needs to match actual implementation
-
-        postIdCounter++;
-        posts[postIdCounter] = Post(nftId, content, msg.sender, block.timestamp);
-        emit PostCreated(nftId, postIdCounter, msg.sender);
+    
+     constructor() {
+        owner = msg.sender;
     }
 
-    function createComment(string memory content, uint256 postId) external {
-        commentIdCounter++;
-        comments[postId].push(Comment(commentIdCounter, content, msg.sender, block.timestamp, postId));
-        emit CommentAdded(commentIdCounter, postId, msg.sender, content);
+    function createNFT() external onlyOwner returns (address) {
+
+        Coval newNFT = new Coval(msg.sender );
+        newNFT.transferOwnership(msg.sender); // Transfer ownership of the NFT contract
+        nfts[address(newNFT)] = newNFT;
+        return address(newNFT);
+    }
+     
+
+    mapping(uint256 => Post) private  posts;
+    mapping(uint256 => Comment) private comments;
+    mapping(uint256 => Group) private groups;
+      mapping(address => Coval) nfts;
+
+
+    modifier onlyOwner() {
+        require(owner == msg.sender, "Only owner can perform this action");
+        _;
     }
 
-    function addNewUser(address newUser) external onlyRole(ADMIN_ROLE) {
-        grantRole(USER_ROLE, newUser);
+    
+
+    function createPost(string memory content, uint256 _postId, uint256 _nftId) external onlyOwner {
+        require(msg.sender != address(0), "Zero address is not allowed");
+        require(posts[_postId].postId == 0, "PostId already exists");
+
+        Post storage newPost = posts[_postId];
+        newPost.postId = _postId;
+        newPost.content = content;
+        newPost.author = msg.sender;
+        newPost.nftId = _nftId;
+
+        postCounter++;
+    }
+function createComment(string memory _comment, uint256 _nftId, uint256 _commentId, uint256 _postId) external {
+        require(msg.sender != address(0), "Zero address is not allowed");
+
+        require(comments[_commentId].commentId == 0, "Comment already exists");
+
+        require(posts[_postId].postId != 0, "Post does not exist");
+
+        Comment storage newComment = comments[_commentId];
+        newComment.commentId = _commentId;
+        newComment.postId = _postId;
+        newComment.commenter = msg.sender;
+        newComment.comment = _comment;
+        newComment.nftId = _nftId;
+
+        commentCounter++;
     }
 
-    function removeUser(address user) external onlyRole(ADMIN_ROLE) {
-        revokeRole(USER_ROLE, user);
+
+   function createGroup(uint256 _groupId, string memory _groupName) external {
+        require(msg.sender != address(0), "Zero address is not allowed");
+        require(groups[_groupId].groupId == 0, "Group already exists");
+
+        Group storage newGroup = groups[_groupId];
+        newGroup.groupId = _groupId;
+        newGroup.groupOwner = msg.sender;
+        newGroup.groupName = _groupName;
+        // Initialize the groupMembers array as empty.
+        newGroup.groupMembers = new address[](0);
+
+        groupCounter++;
     }
+
+
+   
 }
